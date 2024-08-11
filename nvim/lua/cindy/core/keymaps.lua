@@ -17,5 +17,5 @@ vim.keymap.set("n", "<leader>d", "\"_d")
 vim.keymap.set("v", "<leader>d", "\"_d")
 
 -- move with cursor centered
-vim.keymap.set("n", "<C-j>", "j<C-e>")
-vim.keymap.set("n", "<C-k>", "k<C-y>")
+vim.keymap.set("n", "<C-e>", "j<C-e>")
+vim.keymap.set("n", "<C-y>", "k<C-y>")
