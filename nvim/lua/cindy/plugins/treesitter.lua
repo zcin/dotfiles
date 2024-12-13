@@ -12,7 +12,7 @@ return {
         -- configure treesitter
         treesitter.setup({
             highlight = { enable = true },
-            indent = { enable = true},
+            indent = { enable = true },
             autotag = { enable = true },
             ensure_installed = {
                 "python",
@@ -23,6 +23,7 @@ return {
                 "lua",
                 "vim",
                 "dockerfile",
+                "go",
             },
             incremental_selection = {
                 enable = true,
