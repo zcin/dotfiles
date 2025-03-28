@@ -11,6 +11,8 @@ return {
                 markdown = { "prettier" },
                 lua = { "stylua" },
                 python = { "isort", "black" },
+                typescript = { "prettier" },
+                typescriptreact = { "prettier" },
             },
             format_on_save = {
                 lsp_fallback = true,

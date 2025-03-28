@@ -2,6 +2,7 @@ vim.cmd("let g:netrw_liststyle = 3")
 
 vim.opt.relativenumber = true
 vim.opt.number = true
+vim.opt.termguicolors = true
 
 -- tabs & indentation
 vim.opt.tabstop = 4

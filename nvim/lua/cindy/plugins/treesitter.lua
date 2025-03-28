@@ -22,6 +22,8 @@ return {
                 "bash",
                 "lua",
                 "vim",
+                "vimdoc",
+                "luadoc",
                 "dockerfile",
                 "go",
             },
