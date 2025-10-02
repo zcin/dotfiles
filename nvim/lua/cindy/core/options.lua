@@ -1,8 +1,8 @@
+-- set netrw to tree style view (style 3)
 vim.cmd("let g:netrw_liststyle = 3")
 
-vim.opt.relativenumber = true
+-- show line number
 vim.opt.number = true
-vim.opt.termguicolors = true
 
 -- tabs & indentation
 vim.opt.tabstop = 4
@@ -10,6 +10,7 @@ vim.opt.softtabstop = 4
 vim.opt.shiftwidth = 4
 vim.opt.expandtab = true
 
+-- automatically indents new lines intelligently
 vim.opt.smartindent = true
 
 -- disable linewrapping
@@ -25,8 +26,10 @@ vim.opt.incsearch = true
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 
--- scroll stuff
+-- keeps 8 lines visible above/below cursor
 vim.opt.scrolloff = 8
+
+-- always keep space for sign column
 vim.opt.signcolumn = "yes"
 
 -- disable mouse
@@ -35,3 +38,10 @@ vim.opt.mouse = ""
 -- esc delay
 vim.opt.timeoutlen = 1000
 vim.opt.ttimeoutlen = 0
+
+-- keep windows balanced
+vim.opt.equalalways = true
+vim.api.nvim_create_autocmd("VimResized", {
+    pattern = "*",
+    command = "wincmd =",
+})
