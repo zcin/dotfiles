@@ -3,7 +3,7 @@
 if [[ $# -eq 1 ]]; then
     selected=$1
 else
-    selected=$(find ~ ~/workspace -mindepth 1 -maxdepth 1 -type d | fzf)
+    selected=$(find ~ ~/workspace -name ".Trash" -prune -o -mindepth 1 -maxdepth 2 -type d | fzf)
 fi
 
 if [[ -z $selected ]]; then
@@ -22,7 +22,6 @@ fi
 # OK - tmux is running but client is not attached, session with selected_name does not exist
 if [[ -z $TMUX ]] && ! tmux has-session -t=$selected_name 2> /dev/null; then
     tmux new-session -s $selected_name -c "$selected"
-    tmux a -t $selected_name
     exit 0
 fi
 
