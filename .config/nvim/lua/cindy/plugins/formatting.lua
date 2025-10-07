@@ -11,13 +11,15 @@ return {
                 markdown = { "prettier" },
                 lua = { "stylua" },
                 python = { "isort", "black" },
-                typescript = { "prettier" },
-                typescriptreact = { "prettier" },
             },
             format_on_save = {
                 lsp_fallback = true,
                 async = false,
                 timeout_ms = 1000,
+                filter = function(client)
+                    local filetype = vim.bo.filetype
+                    return filetype ~= "cpp"
+                end,
             },
             vim.keymap.set({ "n", "v" }, "<leader>mp", function()
                 conform.format({
