@@ -60,3 +60,6 @@ compinit -u
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'  # case insensitive completion
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}   # use colors in completion listings
 zstyle ':completion:*' menu select
+
+# Source local zshrc if it exists
+[[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
