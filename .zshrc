@@ -1,5 +1,5 @@
 # Conda
-CONDA_PATH=(/data/miniconda3/bin/conda $HOME/miniconda3/bin/conda)
+CONDA_PATH=($HOME/miniconda3/bin/conda $HOME/miniforge3/bin/conda)
 conda() {
     echo "Lazy loading conda upon first invocation..."
     unfunction conda
@@ -29,6 +29,7 @@ setopt share_history
 setopt hist_ignore_all_dups
 setopt hist_save_no_dups
 setopt hist_ignore_dups
+export CLICOLOR=1
 
 # Aliases
 alias vim='nvim'
