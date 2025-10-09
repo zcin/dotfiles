@@ -37,6 +37,7 @@ export CLICOLOR=1
 # Aliases
 alias vim='nvim'
 alias gs='git status'
+alias ga='git add .'
 alias gb='git branch'
 alias ll='ls -lha'
 alias k='kubectl'
