@@ -39,7 +39,7 @@ alias vim='nvim'
 alias gs='git status'
 alias ga='git add .'
 alias gb='git branch'
-alias ll='ls -lha'
+alias ll='ls -lha --color=auto'
 alias k='kubectl'
 alias t='tmux a'
 
