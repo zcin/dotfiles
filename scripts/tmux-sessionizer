@@ -3,7 +3,7 @@
 if [[ $# -eq 1 ]]; then
     selected=$1
 else
-    selected=$(find ~ ~/workspace -name ".Trash" -prune -o -mindepth 1 -maxdepth 2 -type d | fzf)
+    selected=$(find ~ ~/workspace -name ".Trash" -prune -o -mindepth 1 -maxdepth 2 -type d -print | sort -u | fzf)
 fi
 
 if [[ -z $selected ]]; then
