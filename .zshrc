@@ -1,5 +1,5 @@
 # Conda
-CONDA_PATH=($HOME/miniconda3/bin/conda $HOME/miniforge3/bin/conda)
+CONDA_PATH=($HOME/miniconda3/bin/conda $HOME/miniforge3/bin/conda /usr/local/conda/bin/conda)
 conda() {
     echo "Lazy loading conda upon first invocation..."
     unfunction conda
@@ -34,12 +34,13 @@ export CLICOLOR=1
 # Aliases
 alias vim='nvim'
 alias gs='git status'
+alias gb='git branch'
 alias ll='ls -lha'
 alias k='kubectl'
+alias t='tmux a'
 
 # Keyboard shortcuts
 export PATH="$HOME/scripts:$PATH"
-bindkey -s "^f" "tmux-sessionizer\n"
 
 # Set up fzf key bindings and fuzzy completion
 source <(fzf --zsh)
