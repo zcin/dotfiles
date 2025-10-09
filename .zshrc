@@ -58,6 +58,7 @@ nvm() {
 }
 
 # ZSH completions
+fpath+=~/.zfunc;
 autoload -Uz compinit
 compinit -u
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'  # case insensitive completion
