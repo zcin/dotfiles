@@ -1,65 +1,59 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
+# Conda
+CONDA_PATH=(/data/miniconda3/bin/conda $HOME/miniconda3/bin/conda)
+conda() {
+    echo "Lazy loading conda upon first invocation..."
+    unfunction conda
+    for conda_path in "${CONDA_PATH[@]}"; do
+        if [[ -f $conda_path ]]; then
+            echo "Using Conda installation found in $conda_path"
+            eval "$($conda_path shell.zsh hook)"
+            conda "$@"
+            return
+        fi
+    done
+    echo "No conda installation found in ${CONDA_PATH[*]}"
+}
+ce() {
+    conda activate $(conda info --envs | fzf | awk '{print $1}')
+}
 
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/Users/cindyz/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/Users/cindyz/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/Users/cindyz/miniconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/Users/cindyz/miniconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
+# Prompt configuration (sindresorhus/pure)
+fpath+=("$(brew --prefix)/share/zsh/site-functions")
+autoload -U promptinit; promptinit
+prompt pure
 
 # ZSH configurations
-bindkey -e
+bindkey -e  # emacs style command line
 setopt appendhistory
-setopt sharehistory
+setopt share_history
 setopt hist_ignore_all_dups
 setopt hist_save_no_dups
 setopt hist_ignore_dups
-# Terminal display configuration
-export CLICOLOR=1
-export LSCOLORS=ExFxBxDxCxegedabagacad
-export PROMPT="%n:%1d$ "
-source ~/powerlevel10k/powerlevel10k.zsh-theme
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # Aliases
 alias vim='nvim'
 alias gs='git status'
-alias ll='ls -l'
-bindkey -s "^f" "tmux-sessionizer\n"
+alias ll='ls -lha'
 
-# Path modifications
+# Keyboard shortcuts
 export PATH="/Users/cindyz/scripts:$PATH"
-export PATH="$HOME/.rbenv/bin:$PATH"
-eval "$(rbenv init -)"
+bindkey -s "^f" "tmux-sessionizer\n"
 
 # Set up fzf key bindings and fuzzy completion
 source <(fzf --zsh)
 
-# Setup NVM
+# Setup NVM (lazy loaded)
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+nvm() {
+  unset -f nvm
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash completion
+  nvm "$@"
+}
 
-# Source plugins
-autoload -U compinit; compinit
-source ~/.local/share/fzf-tab/fzf-tab.plugin.zsh
-
-# ZSH autosuggestions
+# ZSH completions
+autoload -Uz compinit
+compinit -u
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'  # case insensitive completion
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}   # use colors in completion listings
-zstyle ':completion:*' menu no
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
-source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh   # Activate autosuggestions
+zstyle ':completion:*' menu select
