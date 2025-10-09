@@ -34,6 +34,7 @@ setopt hist_ignore_dups
 alias vim='nvim'
 alias gs='git status'
 alias ll='ls -lha'
+alias k='kubectl'
 
 # Keyboard shortcuts
 export PATH="/Users/cindyz/scripts:$PATH"
