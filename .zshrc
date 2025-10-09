@@ -1,3 +1,6 @@
+# Source local zshrc if it exists
+[[ -r "$HOME/.zshenv.local" ]] && source "$HOME/.zshenv.local"
+
 # Conda
 CONDA_PATH=($HOME/miniconda3/bin/conda $HOME/miniforge3/bin/conda /usr/local/conda/bin/conda)
 conda() {
