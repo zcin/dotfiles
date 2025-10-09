@@ -38,7 +38,7 @@ alias ll='ls -lha'
 alias k='kubectl'
 
 # Keyboard shortcuts
-export PATH="/Users/cindyz/scripts:$PATH"
+export PATH="$HOME/scripts:$PATH"
 bindkey -s "^f" "tmux-sessionizer\n"
 
 # Set up fzf key bindings and fuzzy completion
