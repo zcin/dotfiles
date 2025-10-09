@@ -15,6 +15,8 @@ return {
             indent = { enable = true },
             autotag = { enable = true },
             ensure_installed = {
+                "c",
+                "cpp",
                 "python",
                 "json",
                 "yaml",
