@@ -69,5 +69,8 @@ zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'  # case insensitive compl
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}   # use colors in completion listings
 zstyle ':completion:*' menu select
 
+# Zoxide
+command -v zoxide &> /dev/null && eval "$(zoxide init --cmd cd zsh)"
+
 # Source local zshrc if it exists
 [[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
