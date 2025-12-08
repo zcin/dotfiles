@@ -45,3 +45,14 @@ vim.api.nvim_create_autocmd("VimResized", {
     pattern = "*",
     command = "wincmd =",
 })
+
+-- obsidian / markdown
+vim.opt.conceallevel = 2
+vim.api.nvim_create_autocmd('BufWinEnter', {
+    pattern = { '*.md' },
+    callback = function()
+        vim.opt_local.wrap = true    -- Enable soft wrap for markdown files
+        -- Optionally set textwidth for formatting
+        vim.opt_local.textwidth = 80 -- Or your preferred width
+    end,
+})
