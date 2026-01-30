@@ -21,5 +21,6 @@ return {
         })
 
         vim.keymap.set("n", "<leader>ob", ":ObsidianOpen<CR>")
+        vim.keymap.set("n", "<leader>ot", ":ObsidianToday<CR>")
     end,
 }
