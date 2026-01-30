@@ -1,0 +1,15 @@
+{
+  "window.commandCenter": true,
+  "workbench.colorTheme": "Cursor Dark Midnight",
+  "files.watcherExclude": {
+    "**/.bloop": true,
+    "**/.metals": true
+  },
+  "python.languageServer": "Default",
+  "claudeCode.preferredLocation": "panel",
+  "vim.normalModeKeyBindingsNonRecursive": [],
+
+  "workbench.editor.limit.perEditorGroup": true,
+  "workbench.editor.limit.value": 1,
+  "workbench.editor.limit.enabled": true
+}
