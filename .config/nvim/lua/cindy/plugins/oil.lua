@@ -1,15 +1,26 @@
 return {
-    'stevearc/oil.nvim',
+    "stevearc/oil.nvim",
     opts = {},
     -- Optional dependencies
     dependencies = { "nvim-tree/nvim-web-devicons" },
+    keys = {
+        { "-", "<CMD>Oil<CR>", desc = "Open parent directory" },
+    },
     config = function()
         require("oil").setup({
             keymaps = {
                 ["g?"] = "actions.show_help",
                 ["<CR>"] = "actions.select",
-                ["<C-v>"] = { "actions.select", opts = { vertical = true }, desc = "Open the entry in a vertical split" },
-                ["<C-h>"] = { "actions.select", opts = { horizontal = true }, desc = "Open the entry in a horizontal split" },
+                ["<C-v>"] = {
+                    "actions.select",
+                    opts = { vertical = true },
+                    desc = "Open the entry in a vertical split",
+                },
+                ["<C-x>"] = {
+                    "actions.select",
+                    opts = { horizontal = true },
+                    desc = "Open the entry in a horizontal split",
+                },
                 ["<C-t>"] = { "actions.select", opts = { tab = true }, desc = "Open the entry in new tab" },
                 ["<C-b>"] = "actions.preview",
                 ["<C-c>"] = "actions.close",
@@ -29,8 +40,5 @@ return {
                 show_hidden = true,
             },
         })
-
-        vim.keymap.set("n", "-", "<CMD>Oil<CR>", { desc = "Open parent directory" })
-        vim.keymap.set("n", "<leader>-", require("oil").toggle_float)
     end,
 }

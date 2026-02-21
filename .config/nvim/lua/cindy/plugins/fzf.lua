@@ -2,22 +2,30 @@ return {
     "ibhagwan/fzf-lua",
     -- optional for icon support
     dependencies = { "nvim-tree/nvim-web-devicons" },
-    opts = function()
+    keys = function()
         local fzf = require("fzf-lua")
-        local config = fzf.config
-        local actions = fzf.actions
-
-        config.defaults.actions.files["ctrl-s"] = false
-        config.defaults.actions.files["ctrl-h"] = actions.file_split
-        config.defaults.actions.files["ctrl-v"] = actions.file_vsplit
+        return {
+            { "<C-p>", fzf.files, desc = "Find files" },
+            { "<leader>fs", fzf.live_grep, desc = "Live grep" },
+            { "<leader>fc", fzf.grep_cword, desc = "Grep word under cursor" },
+            { "<leader>fr", fzf.lsp_references, desc = "LSP references" },
+        }
     end,
     config = function()
-        -- calling `setup` is optional for customization
-        require("fzf-lua").setup({})
+        local fzf = require("fzf-lua")
 
-        vim.keymap.set("n", "<C-p>", "<cmd>lua require('fzf-lua').files()<CR>", { silent = true })
-        vim.keymap.set("n", "<leader>fs", "<cmd>lua require('fzf-lua').live_grep()<CR>", { silent = true })
-        vim.keymap.set("n", "<leader>fc", "<cmd>lua require('fzf-lua').grep_cword()<CR>", { silent = true })
-        vim.keymap.set("n", "<leader>fr", "<cmd>lua require('fzf-lua').lsp_references()<CR>", { silent = true })
-    end
+        fzf.setup({
+            actions = {
+                files = {
+                    true, -- inherit defaults
+                    ["ctrl-s"] = false,
+                    ["ctrl-x"] = fzf.actions.file_split,
+                    ["ctrl-v"] = fzf.actions.file_vsplit,
+                },
+            },
+            grep = {
+                hidden = true,
+            },
+        })
+    end,
 }

@@ -6,21 +6,20 @@ return {
     dependencies = {
         "nvim-lua/plenary.nvim",
     },
-    config = function()
-        require("obsidian").setup({
-            workspaces = {
-                {
-                    name = "main",
-                    path = "~/vaults/main",
-                },
+    keys = {
+        { "<leader>ob", "<CMD>ObsidianOpen<CR>", desc = "Obsidian Open" },
+        { "<leader>ot", "<CMD>ObsidianToday<CR>", desc = "Obsidian Today" },
+    },
+    opts = {
+        workspaces = {
+            {
+                name = "main",
+                path = "~/vaults/main",
             },
-            open_app_foreground = true,
-            daily_notes = {
-                folder = "daily",
-            },
-        })
-
-        vim.keymap.set("n", "<leader>ob", ":ObsidianOpen<CR>")
-        vim.keymap.set("n", "<leader>ot", ":ObsidianToday<CR>")
-    end,
+        },
+        open_app_foreground = true,
+        daily_notes = {
+            folder = "daily",
+        },
+    },
 }
