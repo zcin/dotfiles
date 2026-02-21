@@ -1,0 +1,11 @@
+git:
+  autoFetch: true
+  fetchAll: false
+  branchLogCmd: "git log --oneline {{branchName}} --max-count=50"
+  pagers:
+    - useConfig: false
+  allBranchesLogCmds:
+    - git log --oneline --all --max-count=200
+refresher:
+  refreshInterval: 30
+
