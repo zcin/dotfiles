@@ -36,6 +36,8 @@ setopt hist_ignore_all_dups
 setopt hist_save_no_dups
 setopt hist_ignore_dups
 export CLICOLOR=1
+export VISUAL=vim
+export FZF_DEFAULT_OPTS='--no-mouse'
 
 # Aliases
 alias vim='nvim'
