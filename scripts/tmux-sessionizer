@@ -10,7 +10,7 @@ if [[ -z $selected ]]; then
     exit 0
 fi
 
-selected_name=$(basename "$selected" | tr . _)
+selected_name=$(echo "$selected" | sed "s|^$HOME/||" | tr . _)
 tmux_running=$(pgrep tmux)
 
 # OK - tmux is not running
