@@ -21,7 +21,11 @@ ce() {
 }
 
 # Prompt configuration (sindresorhus/pure)
-fpath+=("$(brew --prefix)/share/zsh/site-functions")
+if (( $+commands[brew] )); then
+    fpath+=("$(brew --prefix)/share/zsh/site-functions")
+else
+    fpath+=($HOME/.nvm/versions/node/v22.19.0/lib/node_modules/pure-prompt/functions)
+fi
 autoload -U promptinit; promptinit
 prompt pure
 
