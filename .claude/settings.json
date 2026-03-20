@@ -1,0 +1,39 @@
+{
+  "env": {
+    "BASH_MAX_OUTPUT_LENGTH": "100000",
+    "ENABLE_EXPERIMENTAL_MCP_CLI": "true",
+    "ENABLE_LSP_TOOL": "1"
+  },
+  "permissions": {
+    "allow": [
+      "mcp__google__*",
+      "mcp__github__*",
+      "mcp__glean__*",
+      "mcp__jira__*",
+      "Bash(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Read(*)",
+      "Glob(*)",
+      "Grep(*)"
+    ],
+    "deny": [
+      "Bash(rm *)",
+      "mcp__google__google_write_api_call",
+      "mcp__github__github_write_api_call",
+      "mcp__jira__jira_write_api_call"
+    ]
+  },
+  "model": "opus[1m]",
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  },
+  "enabledPlugins": {
+    "plugin-builder@experimental-plugin-marketplace": true,
+    "superpowers@superpowers-marketplace": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "vulnerability-agent@experimental-plugin-marketplace": true,
+    "gopls-lsp@claude-plugins-official": true
+  }
+}
