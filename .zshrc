@@ -56,7 +56,11 @@ alias t='tmux a'
 export PATH="$HOME/scripts:$PATH"
 
 # Set up fzf key bindings and fuzzy completion
-source <(fzf --zsh)
+if fzf --zsh &>/dev/null; then
+  source <(fzf --zsh)
+elif [ -f ~/.fzf.zsh ]; then
+  source ~/.fzf.zsh
+fi
 
 # Setup NVM (lazy loaded)
 export NVM_DIR="$HOME/.nvm"
