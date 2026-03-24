@@ -1,24 +1,5 @@
 # Source local zshrc if it exists
-[[ -r "$HOME/.zshenv.local" ]] && source "$HOME/.zshenv.local"
-
-# Conda
-CONDA_PATH=($HOME/miniconda3/bin/conda $HOME/miniforge3/bin/conda /usr/local/conda/bin/conda)
-conda() {
-    echo "Lazy loading conda upon first invocation..."
-    unfunction conda
-    for conda_path in "${CONDA_PATH[@]}"; do
-        if [[ -f $conda_path ]]; then
-            echo "Using Conda installation found in $conda_path"
-            eval "$($conda_path shell.zsh hook)"
-            conda "$@"
-            return
-        fi
-    done
-    echo "No conda installation found in ${CONDA_PATH[*]}"
-}
-ce() {
-    conda activate $(conda info --envs | fzf | awk '{print $1}')
-}
+[[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 
 # Prompt configuration (sindresorhus/pure)
 if (( $+commands[brew] )); then
@@ -39,9 +20,6 @@ setopt share_history
 setopt hist_ignore_all_dups
 setopt hist_save_no_dups
 setopt hist_ignore_dups
-export CLICOLOR=1
-export VISUAL=vim
-export FZF_DEFAULT_OPTS='--no-mouse'
 
 # Aliases
 alias vim='nvim'
@@ -51,6 +29,7 @@ alias gb='git branch'
 alias ll='ls -lha --color=auto'
 alias k='kubectl'
 alias t='tmux a'
+alias gsn='git status -unormal'
 
 # Keyboard shortcuts
 export PATH="$HOME/scripts:$PATH"
@@ -58,14 +37,32 @@ export PATH="$HOME/.fzf/bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
 
 # Set up fzf key bindings and fuzzy completion
-if fzf --zsh &>/dev/null; then
+if fzf --zsh &>/dev/null; then  # fzf 0.48+
   source <(fzf --zsh)
-elif [ -f ~/.fzf.zsh ]; then
+elif [ -f ~/.fzf.zsh ]; then  # older fzf
   source ~/.fzf.zsh
 fi
 
+# Conda
+CONDA_PATH=($HOME/miniconda3/bin/conda $HOME/miniforge3/bin/conda /usr/local/conda/bin/conda)
+conda() {
+    echo "Lazy loading conda upon first invocation..."
+    unfunction conda
+    for conda_path in "${CONDA_PATH[@]}"; do
+        if [[ -f $conda_path ]]; then
+            echo "Using Conda installation found in $conda_path"
+            eval "$($conda_path shell.zsh hook)"
+            conda "$@"
+            return
+        fi
+    done
+    echo "No conda installation found in ${CONDA_PATH[*]}"
+}
+ce() {
+    conda activate $(conda info --envs | fzf | awk '{print $1}')
+}
+
 # Setup NVM (lazy loaded)
-export NVM_DIR="$HOME/.nvm"
 nvm() {
   unset -f nvm
   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
@@ -83,6 +80,3 @@ zstyle ':completion:*' menu select
 
 # Zoxide
 command -v zoxide &> /dev/null && eval "$(zoxide init --cmd cd zsh)"
-
-# Source local zshrc if it exists
-[[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
