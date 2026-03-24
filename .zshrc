@@ -33,11 +33,7 @@ export PATH="$HOME/.fzf/bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
 
 # Set up fzf key bindings and fuzzy completion
-if fzf --zsh &>/dev/null; then  # fzf 0.48+
-  source <(fzf --zsh)
-elif [ -f ~/.fzf.zsh ]; then  # older fzf
-  source ~/.fzf.zsh
-fi
+source <(fzf --zsh)  # fzf 0.48+
 
 # Conda
 CONDA_PATH=($HOME/miniconda3/bin/conda $HOME/miniforge3/bin/conda /usr/local/conda/bin/conda)
