@@ -4,3 +4,4 @@ font-feature = -liga
 font-feature = -dlig
 
 keybind = super+b=text:\x1b[222~
+keybind = shift+enter=text:\x1b\r
