@@ -1,2 +1,23 @@
 .config/nvim/lazy-lock.json
 .config/karabiner/automatic_backups/
+
+# Auto-generated (continuously generates new files)
+.config/JetBrains/
+.config/go/telemetry/
+.config/llm-cli/
+.config/pulse/
+
+# Auto-generated (specific files)
+.config/fish/fish_variables
+.config/fish/config.fish
+.config/fish/functions/fish_user_key_bindings.fish
+.config/gopls/prompt/telemetry
+.config/htop/htoprc
+.config/mlflow/telemetry.json
+.config/uv/uv-receipt.json
+
+# Contains OAuth token
+.config/gh/hosts.yml
+
+# Machine-specific paths
+.config/mcp/
