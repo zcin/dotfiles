@@ -4,7 +4,7 @@ typeset -U path
 # Env vars
 export VISUAL=vim
 export NVM_DIR="$HOME/.nvm"
-export CLICOLOR=1
+export CLICOLOR=1  # Read by MacOS only
 export FZF_DEFAULT_OPTS='--no-mouse'
 
 # PATH modifications. Note that these will get pushed back on MacOS by path_helper.
