@@ -18,6 +18,8 @@
 
 # Contains OAuth token
 .config/gh/hosts.yml
+.config/.atlassian/atlassian.json
+.config/.jira/jira.json
 
 # Machine-specific paths
 .config/mcp/
