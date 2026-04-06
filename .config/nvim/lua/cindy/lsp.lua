@@ -1,4 +1,38 @@
-vim.lsp.enable({ "lua_ls", "pyright" })
+vim.lsp.config("pyright", {
+    root_markers = { "pyrightconfig.json", ".git" },
+})
+
+vim.lsp.config("jsonnet_ls", {
+    cmd = { "jsonnet-language-server" },
+    filetypes = { "jsonnet" },
+    root_markers = { ".git" },
+    settings = {
+        formatting = {
+            StringStyle = "leave",
+        },
+    },
+})
+
+vim.lsp.config("gopls", {
+    cmd = { "gopls" },
+    filetypes = { "go", "gomod", "gowork", "gotmpl" },
+    root_markers = { "go.mod", ".git" },
+})
+
+vim.lsp.config("metals", {
+    cmd = { "metals" },
+    cmd_env = { JAVA_HOME = "/usr/lib/jvm/java-17-openjdk-amd64" },
+    filetypes = { "scala", "sbt", "java" },
+    root_markers = { "build.sbt", "build.sc", "build.gradle", "pom.xml", ".git" },
+})
+
+vim.lsp.config("starpls", {
+    cmd = { "starpls", "server" },
+    filetypes = { "bzl", "star" },
+    root_markers = { "WORKSPACE", "WORKSPACE.bazel", ".git" },
+})
+
+vim.lsp.enable({ "lua_ls", "pyright", "jsonnet_ls", "gopls", "metals", "starpls" })
 
 local keymap = vim.keymap
 
@@ -16,8 +50,8 @@ vim.api.nvim_create_autocmd("LspAttach", {
         opts.desc = "Go to declaration"
         keymap.set("n", "gD", vim.lsp.buf.declaration, opts) -- go to declaration
 
-        opts.desc = "Show LSP definitions"
-        keymap.set("n", "gd", "<cmd>Telescope lsp_definitions<CR>", opts) -- show lsp definitions
+        opts.desc = "Go to definition"
+        keymap.set("n", "gd", vim.lsp.buf.definition, opts)
 
         opts.desc = "Show LSP implementations"
         keymap.set("n", "gi", "<cmd>Telescope lsp_implementations<CR>", opts) -- show lsp implementations

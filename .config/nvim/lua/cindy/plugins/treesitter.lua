@@ -26,6 +26,7 @@ return {
                 "vim",
                 "dockerfile",
                 "go",
+                "jsonnet",
             },
             incremental_selection = {
                 enable = true,
