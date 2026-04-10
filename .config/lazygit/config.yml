@@ -1,11 +1,27 @@
 git:
-  autoFetch: true
+  autoFetch: false
   fetchAll: false
   branchLogCmd: "git log --oneline {{branchName}} --max-count=50"
   pagers:
     - useConfig: false
   allBranchesLogCmds:
     - git log --oneline --all --max-count=200
+customCommands:
+  - key: "P"
+    command: "if [[ $PWD == /home/cindy.zhang/universe/* ]]; then git pp; else git push; fi"
+    context: "global"
+    loadingText: "Pushing..."
+  - key: "N"
+    command: "git add -N {{.Form.File}}"
+    context: "files"
+    description: "Track a new file"
+    prompts:
+      - type: "input"
+        title: "File to track:"
+        key: "File"
+  - key: "a"
+    command: "git add -u"
+    context: "files"
+    description: "Stage all tracked files"
 refresher:
   refreshInterval: 30
-
