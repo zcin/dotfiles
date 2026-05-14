@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+session=$(tmux display-message -p '#S')
+cwd=$(tmux display-message -p '#{session_path}')
+
+selected=$(
+    git -C "$cwd" worktree list --porcelain 2>/dev/null | awk '
+        /^worktree / { path=$2 }
+        /^branch /   { sub("refs/heads/", "", $2); print $2 "  (" path ")|" path }
+    ' | fzf --delimiter='|' --with-nth=1 --prompt="window> " --no-sort
+)
+
+if [[ -z "$selected" ]]; then
+    exit 0
+fi
+
+worktree=$(echo "$selected" | cut -d'|' -f2)
+name=$(basename "$worktree")
+
+if tmux list-windows -t "$session" -F "#{window_name}" | grep -qx "$name"; then
+    tmux select-window -t "$session:$name"
+else
+    tmux new-window -t "$session" -n "$name" -c "$worktree"
+fi

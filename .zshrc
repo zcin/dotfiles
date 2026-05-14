@@ -5,6 +5,7 @@
 fpath+=($HOME/.zsh/pure)
 autoload -U promptinit; promptinit
 prompt pure
+export PURE_GIT_PULL=0
 
 # ZSH configurations
 bindkey -e  # emacs style command line
