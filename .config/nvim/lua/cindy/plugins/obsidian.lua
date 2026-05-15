@@ -14,7 +14,7 @@ return {
         workspaces = {
             {
                 name = "main",
-                path = "~/vaults/main",
+                path = "~/vault",
             },
         },
         open_app_foreground = true,
