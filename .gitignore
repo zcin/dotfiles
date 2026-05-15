@@ -15,6 +15,8 @@
 .config/htop/htoprc
 .config/mlflow/telemetry.json
 .config/uv/uv-receipt.json
+__pycache__/
+*.pyc
 
 # Contains OAuth token
 .config/gh/hosts.yml
