@@ -11,7 +11,8 @@ Sections:
   - kv_cache    : MLA compressed KV cache for --num-tokens. Shards by
                   attention parallelism (TP replicates; DP shards seqs).
 
-Weights and KV cache can use different dtypes (--weight-dtype, --kv-dtype).
+Weights and KV cache can use different dtypes (--weight-dtype, section-specific
+weight overrides, and --kv-dtype).
 
 NOTE: excludes embed_tokens, lm_head, layernorms (small).
 """
@@ -105,10 +106,12 @@ def calculate(
     ep: int,
     dp: int,
     sections=("attention", "dense_ffn", "moe"),
-    dtype_bytes: int = 2,
+    dtype_bytes: float = 2,
+    dtype_bytes_per_section: dict[str, float] | None = None,
 ) -> dict:
     cfg = MODELS[model]
     moe_layers = cfg.num_layers - cfg.num_dense_layers
+    dtype_bytes_per_section = dtype_bytes_per_section or {}
 
     params = {}
     if "attention" in sections:
@@ -126,7 +129,10 @@ def calculate(
             moe_params_per_layer(cfg, tp, ep, moe_parallelism) * moe_layers
         )
 
-    bytes_per_section = {k: v * dtype_bytes for k, v in params.items()}
+    bytes_per_section = {
+        section: count * dtype_bytes_per_section.get(section, dtype_bytes)
+        for section, count in params.items()
+    }
     return {
         "params_per_section": params,
         "bytes_per_section": bytes_per_section,
@@ -199,7 +205,17 @@ def main():
     )
     p.add_argument(
         "--weight-dtype", default="bf16", choices=list(DTYPE_TO_BYTES.keys()),
-        help="Weights dtype. Default bf16.",
+        help="Default dtype for weight sections unless a section override is set.",
+    )
+    p.add_argument(
+        "--attention-weight-dtype",
+        choices=list(DTYPE_TO_BYTES.keys()),
+        help="Optional override for attention weights.",
+    )
+    p.add_argument(
+        "--moe-weight-dtype",
+        choices=list(DTYPE_TO_BYTES.keys()),
+        help="Optional override for MoE weights.",
     )
     p.add_argument(
         "--kv-dtype", default="fp8", choices=list(DTYPE_TO_BYTES.keys()),
@@ -216,7 +232,16 @@ def main():
     )
     args = p.parse_args()
 
-    w_bytes = DTYPE_TO_BYTES[args.weight_dtype]
+    weight_dtype_names = {
+        "attention": args.attention_weight_dtype or args.weight_dtype,
+        "dense_ffn": args.weight_dtype,
+        "moe": args.moe_weight_dtype or args.weight_dtype,
+    }
+    weight_dtype_bytes = {
+        section: DTYPE_TO_BYTES[dtype_name]
+        for section, dtype_name in weight_dtype_names.items()
+    }
+    default_weight_bytes = DTYPE_TO_BYTES[args.weight_dtype]
     kv_bytes = DTYPE_TO_BYTES[args.kv_dtype]
 
     used = {args.attention, args.moe, "TP"}  # dense_ffn always uses TP
@@ -229,11 +254,11 @@ def main():
 
     weight_per_rank = calculate(
         args.model, args.attention, args.moe, "TP",
-        tp, ep, dp, tuple(weight_secs), w_bytes,
+        tp, ep, dp, tuple(weight_secs), default_weight_bytes, weight_dtype_bytes,
     )["bytes_per_section"] if weight_secs else {}
     weight_all = calculate(
         args.model, args.attention, args.moe, "TP",
-        1, 1, 1, tuple(weight_secs), w_bytes,
+        1, 1, 1, tuple(weight_secs), default_weight_bytes, weight_dtype_bytes,
     )["bytes_per_section"] if weight_secs else {}
 
     rows = {}  # section -> (all_bts, per_rank)
@@ -252,7 +277,13 @@ def main():
     print(f"Model: {args.model}")
     print(f"Parallelism: TP={tp} EP={ep} DP={dp}")
     print(f"  attention={args.attention}, moe={args.moe}, dense_ffn=TP")
-    print(f"weight_dtype: {args.weight_dtype}, kv_dtype: {args.kv_dtype}")
+    print(
+        "weight_dtypes: "
+        f"attention={weight_dtype_names['attention']}, "
+        f"dense_ffn={weight_dtype_names['dense_ffn']}, "
+        f"moe={weight_dtype_names['moe']}"
+    )
+    print(f"kv_dtype: {args.kv_dtype}")
     if include_kv:
         print(f"num_tokens: {args.num_tokens}, bs: {args.bs}")
     print()
