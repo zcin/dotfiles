@@ -1,6 +1,7 @@
 {
   "env": {
     "BASH_MAX_OUTPUT_LENGTH": "100000",
+    "CLAUDE_CODE_NO_FLICKER": "1",
     "ENABLE_EXPERIMENTAL_MCP_CLI": "true",
     "ENABLE_LSP_TOOL": "1"
   },

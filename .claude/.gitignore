@@ -4,3 +4,4 @@
 # Track these
 !.gitignore
 !settings.json
+!statusline.sh
