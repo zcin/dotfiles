@@ -17,6 +17,7 @@ setopt share_history
 setopt hist_ignore_all_dups
 setopt hist_save_no_dups
 setopt hist_ignore_dups
+setopt hist_ignore_space
 
 # Aliases
 alias vim='nvim'
@@ -27,6 +28,7 @@ alias ll='ls -lha --color=auto'
 alias k='kubectl'
 alias t='tmux a'
 alias gsn='git status -unormal'
+alias cod='isaac codex -- --cd $(pwd)'
 
 # Keyboard shortcuts
 export PATH="$HOME/scripts:$PATH"
@@ -74,3 +76,11 @@ zstyle ':completion:*' menu select
 
 # Zoxide
 command -v zoxide &> /dev/null && eval "$(zoxide init --cmd cd zsh)"
+
+# bun completions
+[ -s "/home/cindy.zhang/.bun/_bun" ] && source "/home/cindy.zhang/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+export I_DANGEROUSLY_OPT_IN_TO_UNSUPPORTED_ALPHA_TOOLS=true
