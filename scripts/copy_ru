@@ -1,0 +1,50 @@
+#!/bin/bash
+set -euo pipefail
+
+PREFIX="model-serving/serving-engine/rexie"
+
+if [ $# -lt 3 ]; then
+    echo "Usage: $0 <src_worktree> <dest_worktree> <file1> [file2] ..."
+    echo "Example: $0 r1 u1 pyproject.toml uv.lock"
+    echo ""
+    echo "Autodetects rexie vs universe worktrees by name."
+    echo "Files are relative to the rexie root; universe paths get $PREFIX/ prepended."
+    exit 1
+fi
+
+resolve() {
+    local name="$1"
+    if [ -d "$HOME/rexie/$name" ]; then
+        echo "rexie:$HOME/rexie/$name"
+    elif [ -d "$HOME/universe/$name" ]; then
+        echo "universe:$HOME/universe/$name"
+    else
+        echo "Error: '$name' not found in ~/rexie/ or ~/universe/" >&2
+        exit 1
+    fi
+}
+
+src_info=$(resolve "$1")
+dest_info=$(resolve "$2")
+src_type="${src_info%%:*}"
+src_path="${src_info#*:}"
+dest_type="${dest_info%%:*}"
+dest_path="${dest_info#*:}"
+
+shift 2
+
+for file in "$@"; do
+    if [ "$src_type" = "universe" ]; then
+        src_file="$src_path/$PREFIX/$file"
+    else
+        src_file="$src_path/$file"
+    fi
+    if [ "$dest_type" = "universe" ]; then
+        dest_file="$dest_path/$PREFIX/$file"
+    else
+        dest_file="$dest_path/$file"
+    fi
+    mkdir -p "$(dirname "$dest_file")"
+    cp "$src_file" "$dest_file"
+    echo "Copied $src_file -> $dest_file"
+done

@@ -1,0 +1,16 @@
+[Unit]
+Description=Remount quicktree overlays after login
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/bin/quicktree -q remount-all
+Restart=on-failure
+RestartSec=30
+StartLimitBurst=3
+StartLimitIntervalSec=120
+SyslogIdentifier=quicktree-remount
+RemainAfterExit=1
+
+[Install]
+WantedBy=default.target

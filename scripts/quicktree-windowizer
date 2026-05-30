@@ -1,0 +1,452 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+log_debug() {
+    if [[ ${QUICKTREE_WINDOWIZER_DEBUG:-1} == "1" ]]; then
+        printf '[%s] %s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$*" >>"$HOME/quicktree-windowizer.log"
+    fi
+}
+
+die_visible() {
+    printf '%s\n' "$*" >&2
+    read -r -p "Press enter to close"
+    exit 1
+}
+
+usage() {
+    cat <<'EOF'
+quicktree-windowizer
+
+Interactive tmux popup for opening existing quicktrees or creating a new
+quicktree-backed branch from the current fzf query.
+EOF
+}
+
+tmux_session() {
+    if [[ -n ${TMUX_PANE:-} ]]; then
+        tmux display-message -p -t "$TMUX_PANE" '#S'
+    else
+        tmux display-message -p '#S'
+    fi
+}
+
+tmux_cwd() {
+    if [[ -n ${TMUX_PANE:-} ]]; then
+        tmux display-message -p -t "$TMUX_PANE" '#{pane_current_path}'
+    else
+        tmux display-message -p '#{pane_current_path}'
+    fi
+}
+
+repo_root() {
+    local cwd=$1
+
+    git -C "$cwd" rev-parse --show-toplevel 2>/dev/null
+}
+
+main_worktree() {
+    local cwd=$1
+
+    git -C "$cwd" worktree list --porcelain 2>/dev/null | awk '
+        /^worktree / {
+            print substr($0, 10)
+            exit
+        }
+    '
+}
+
+relative_to_repo() {
+    local repo=$1
+    local path=$2
+
+    case "$path" in
+        "$repo")
+            printf '.\n'
+            ;;
+        "$repo"/*)
+            printf '%s\n' "${path#"$repo"/}"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+sanitize_window_name() {
+    local name=$1
+    name=${name#refs/heads/}
+    name=${name//\//_}
+    name=${name//:/_}
+    name=${name// /_}
+    printf '%s\n' "$name"
+}
+
+list_worktrees() {
+    local cwd=$1
+    local query=${2:-}
+
+    git -C "$cwd" worktree list --porcelain 2>/dev/null | awk -v query="$query" '
+        function lower(s) {
+            return tolower(s)
+        }
+
+        function matches(branch, path) {
+            if (query == "") {
+                return 1
+            }
+            return index(lower(branch " " path), lower(query)) > 0
+        }
+
+        function flush() {
+            if (path == "") {
+                return
+            }
+
+            display_branch = branch
+            if (display_branch == "") {
+                display_branch = "detached:" path
+            }
+
+            if (matches(display_branch, path)) {
+                print display_branch "\t" path "\texisting"
+            }
+
+            path = ""
+            branch = ""
+        }
+
+        /^worktree / {
+            flush()
+            path = substr($0, 10)
+            branch = ""
+            next
+        }
+
+        /^branch / {
+            branch = $2
+            sub(/^refs\/heads\//, "", branch)
+            next
+        }
+
+        END {
+            flush()
+        }
+    '
+}
+
+fzf_rows() {
+    local cwd=$1
+    local query=${2:-}
+
+    list_worktrees "$cwd" "$query"
+    list_branches "$cwd" "$query"
+
+    if [[ -n "$query" ]] && ! git -C "$cwd" show-ref --verify --quiet "refs/heads/$query"; then
+        printf 'create new branch\t%s\tcreate\n' "$query"
+    fi
+}
+
+list_branches() {
+    local cwd=$1
+    local query=${2:-}
+    local materialized
+
+    materialized=$(git -C "$cwd" worktree list --porcelain 2>/dev/null | awk '
+        /^branch / {
+            branch = $2
+            sub(/^refs\/heads\//, "", branch)
+            print branch
+        }
+    ')
+
+    git -C "$cwd" branch --format='%(refname:short)' 2>/dev/null |
+        while IFS= read -r branch; do
+            [[ -n "$branch" ]] || continue
+
+            if [[ "$materialized" == "$branch" || "$materialized" == *$'\n'"$branch"$'\n'* || "$materialized" == "$branch"$'\n'* || "$materialized" == *$'\n'"$branch" ]]; then
+                continue
+            fi
+
+            if matches_query "$branch" "$query"; then
+                printf 'checkout branch\t%s\tcheckout\n' "$branch"
+            fi
+        done
+}
+
+list_presets() {
+    local settings=${QUICKTREE_SETTINGS:-"$HOME/.quicktree/settings.toml"}
+
+    [[ -r "$settings" ]] || return 0
+
+    awk '
+        function emit() {
+            sub(/^[[:space:]]+/, "", paths)
+            sub(/[[:space:]]+$/, "", paths)
+            if (preset != "" && paths != "") {
+                print preset "\t" paths
+            }
+        }
+
+        /^\[presets\./ {
+            emit()
+            preset = $0
+            sub(/^\[presets\./, "", preset)
+            sub(/\]$/, "", preset)
+            paths = ""
+            next
+        }
+
+        preset != "" && /^paths[[:space:]]*=/ {
+            paths = $0
+            sub(/^[^=]*=[[:space:]]*\[/, "", paths)
+            sub(/\][[:space:]]*$/, "", paths)
+            gsub(/"/, "", paths)
+            gsub(/,[[:space:]]*/, ", ", paths)
+            sub(/, $/, "", paths)
+            next
+        }
+
+        /^\[/ {
+            emit()
+            preset = ""
+            paths = ""
+            next
+        }
+
+        END {
+            emit()
+        }
+    ' "$settings"
+}
+
+sparse_rows() {
+    local repo=$1
+    local current_path=$2
+    local query=${3:-}
+    local current_rel=""
+
+    if current_rel=$(relative_to_repo "$repo" "$current_path"); then
+        if [[ "$current_rel" != "." ]] && matches_query "current $current_rel" "$query"; then
+            printf 'current path\t%s\tpath\t%s\n' "$current_rel" "$current_rel"
+        fi
+    fi
+
+    list_presets | while IFS=$'\t' read -r preset paths; do
+        if matches_query "preset $preset $paths" "$query"; then
+            printf 'preset: %s\t%s\tpreset\t%s\n' "$preset" "$paths" "$preset"
+        fi
+    done
+
+    if [[ -n "$query" ]]; then
+        printf 'manual path\t%s\tpath\t%s\n' "$query" "$query"
+    fi
+}
+
+matches_query() {
+    local haystack=$1
+    local needle=${2:-}
+
+    [[ -z "$needle" ]] && return 0
+    [[ "${haystack,,}" == *"${needle,,}"* ]]
+}
+
+find_branch_path() {
+    local cwd=$1
+    local branch=$2
+
+    list_worktrees "$cwd" "" | awk -F '\t' -v branch="$branch" '$1 == branch { print $2; exit }'
+}
+
+resolve_open_path() {
+    local branch=$1
+    local fallback=$2
+    local quicktree_path=""
+
+    if command -v quicktree >/dev/null 2>&1; then
+        quicktree_path=$(quicktree path "$branch" 2>/dev/null || true)
+    fi
+
+    if [[ -n "$quicktree_path" && -d "$quicktree_path" ]]; then
+        printf '%s\n' "$quicktree_path"
+    else
+        printf '%s\n' "$fallback"
+    fi
+}
+
+open_tmux_window() {
+    local session=$1
+    local path=$2
+    local branch=$3
+    local name
+
+    name=$(sanitize_window_name "$branch")
+    log_debug "open: session=$session branch=$branch name=$name initial_path=$path"
+
+    if tmux list-windows -t "$session" -F "#{window_name}" | grep -qxF "$name"; then
+        log_debug "select-window: target=$session:$name"
+        tmux select-window -t "$session:$name"
+    else
+        if [[ ! -d "$path" || "$path" == */.quicktree/worktrees/* ]]; then
+            log_debug "resolve path: branch=$branch fallback=$path"
+            path=$(resolve_open_path "$branch" "$path")
+        fi
+
+        log_debug "new-window: target=$session: name=$name path=$path"
+        if ! tmux new-window -t "$session:" -n "$name" -c "$path"; then
+            die_visible "Failed to create tmux window: session=$session name=$name path=$path"
+        fi
+    fi
+}
+
+create_branch() {
+    local repo=$1
+    local branch=$2
+    local sparse_action=$3
+    local sparse_value=$4
+
+    if ! git -C "$repo" check-ref-format --branch "$branch" >/dev/null 2>&1; then
+        printf 'Invalid branch name: %s\n' "$branch" >&2
+        read -r -p "Press enter to close"
+        exit 1
+    fi
+
+    if ! command -v quicktree >/dev/null 2>&1; then
+        printf 'quicktree was not found on PATH. Is Quicktree installed for this shell?\n' >&2
+        read -r -p "Press enter to close"
+        exit 1
+    fi
+
+    case "$sparse_action" in
+        preset)
+            quicktree checkout -b "$branch" --preset "$sparse_value" --repo "$repo"
+            ;;
+        path)
+            quicktree create "$sparse_value" --branch "$branch" --repo "$repo"
+            ;;
+        *)
+            printf 'Unknown sparse action: %s\n' "$sparse_action" >&2
+            read -r -p "Press enter to close"
+            exit 1
+            ;;
+    esac
+}
+
+checkout_branch() {
+    local repo=$1
+    local branch=$2
+    local current_path=$3
+
+    if ! command -v quicktree >/dev/null 2>&1; then
+        printf 'quicktree was not found on PATH. Is Quicktree installed for this shell?\n' >&2
+        read -r -p "Press enter to close"
+        exit 1
+    fi
+
+    if [[ -d "$current_path" ]]; then
+        ( cd "$current_path" && quicktree checkout "$branch" --repo "$repo" )
+    else
+        ( cd "$repo" && quicktree checkout "$branch" --repo "$repo" )
+    fi
+}
+
+if [[ ${1:-} == "--help" || ${1:-} == "-h" ]]; then
+    usage
+    exit 0
+fi
+
+if [[ ${1:-} == "--fzf-rows" ]]; then
+    fzf_rows "$2" "${3:-}"
+    exit 0
+fi
+
+if [[ ${1:-} == "--sparse-rows" ]]; then
+    sparse_rows "$2" "$3" "${4:-}"
+    exit 0
+fi
+
+session=$(tmux_session)
+cwd=$(tmux_cwd)
+repo=$(repo_root "$cwd" || true)
+log_debug "start: session=$session cwd=$cwd pane=${TMUX_PANE:-} repo_initial=$repo"
+
+if [[ -z "$repo" ]]; then
+    repo=$(main_worktree "$cwd" || true)
+fi
+
+if [[ -z "$repo" ]]; then
+    printf 'Could not find a git repository from: %s\n' "$cwd" >&2
+    read -r -p "Press enter to close"
+    exit 1
+fi
+
+log_debug "fzf start: repo=$repo"
+set +e
+selected=$(
+    "$0" --fzf-rows "$repo" "" |
+        fzf \
+            --delimiter=$'\t' \
+            --with-nth=1,2 \
+            --prompt="quicktree> " \
+            --no-sort \
+            --phony \
+            --bind "change:reload($0 --fzf-rows '$repo' {q})"
+)
+fzf_status=$?
+set -e
+log_debug "fzf done: status=$fzf_status selected=$selected"
+
+if [[ $fzf_status -ne 0 && -z "$selected" ]]; then
+    exit 0
+fi
+
+if [[ -z "$selected" ]]; then
+    log_debug "cancelled"
+    exit 0
+fi
+
+branch=$(printf '%s\n' "$selected" | awk -F '\t' '{ print $1 }')
+path=$(printf '%s\n' "$selected" | awk -F '\t' '{ print $2 }')
+action=$(printf '%s\n' "$selected" | awk -F '\t' '{ print $3 }')
+log_debug "selected: branch_field=$branch path_field=$path action=$action repo=$repo cwd=$cwd session=$session"
+
+if [[ "$action" == "create" ]]; then
+    branch=$path
+    sparse=$(
+        "$0" --sparse-rows "$repo" "$cwd" "" |
+            fzf \
+                --delimiter=$'\t' \
+                --with-nth=1,2 \
+                --prompt="sparse> " \
+                --no-sort \
+                --phony \
+                --bind "change:reload($0 --sparse-rows '$repo' '$cwd' {q})"
+    )
+
+    if [[ -z "$sparse" ]]; then
+        exit 0
+    fi
+
+    sparse_action=$(printf '%s\n' "$sparse" | awk -F '\t' '{ print $3 }')
+    sparse_value=$(printf '%s\n' "$sparse" | awk -F '\t' '{ print $4 }')
+
+    create_branch "$repo" "$branch" "$sparse_action" "$sparse_value"
+    path=$(find_branch_path "$repo" "$branch")
+
+    if [[ -z "$path" ]]; then
+        printf 'Created branch, but could not find its quicktree path: %s\n' "$branch" >&2
+        read -r -p "Press enter to close"
+        exit 1
+    fi
+elif [[ "$action" == "checkout" ]]; then
+    branch=$path
+    checkout_branch "$repo" "$branch" "$cwd"
+    path=$(find_branch_path "$repo" "$branch")
+
+    if [[ -z "$path" ]]; then
+        printf 'Checked out branch, but could not find its quicktree path: %s\n' "$branch" >&2
+        read -r -p "Press enter to close"
+        exit 1
+    fi
+fi
+
+open_tmux_window "$session" "$path" "$branch"
