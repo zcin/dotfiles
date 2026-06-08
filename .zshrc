@@ -34,6 +34,7 @@ alias cod='isaac codex -- --cd $(pwd)'
 export PATH="$HOME/scripts:$PATH"
 export PATH="$HOME/.fzf/bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 # Set up fzf key bindings and fuzzy completion
 source <(fzf --zsh)  # fzf 0.48+

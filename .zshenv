@@ -6,6 +6,7 @@ export VISUAL=vim
 export NVM_DIR="$HOME/.nvm"
 export CLICOLOR=1  # Read by MacOS only
 export FZF_DEFAULT_OPTS='--no-mouse'
+export MCP_PRIVACY_SUMMARIZATION_ENABLED=false
 
 # PATH modifications. Note that these will get pushed back on MacOS by path_helper.
 export PATH="$HOME/.local/bin:$PATH"  # uv

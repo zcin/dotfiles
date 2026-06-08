@@ -1,6 +1,9 @@
 -- set netrw to tree style view (style 3)
 vim.cmd("let g:netrw_liststyle = 3")
 
+-- enable 24-bit color
+vim.opt.termguicolors = true
+
 -- show line number
 vim.opt.number = true
 
@@ -54,8 +57,18 @@ vim.api.nvim_create_autocmd('FileType', {
         -- Wrap settings
         vim.opt_local.wrap = true
         vim.opt_local.textwidth = 80
-        
+
         -- Tab settings
+        vim.opt_local.shiftwidth = 2
+        vim.opt_local.softtabstop = 2
+        vim.opt_local.expandtab = true
+    end,
+})
+
+vim.api.nvim_create_autocmd('FileType', {
+    pattern = { 'c', 'cpp', 'cuda', 'objc', 'objcpp' },
+    callback = function()
+        vim.opt_local.tabstop = 2
         vim.opt_local.shiftwidth = 2
         vim.opt_local.softtabstop = 2
         vim.opt_local.expandtab = true
