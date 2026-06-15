@@ -13,8 +13,7 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({ { import = "cindy.plugins" } }, {
     checker = {
-        enabled = true,
-        notify = false,
+        enabled = false,
     },
     change_detection = {
         notify = false,

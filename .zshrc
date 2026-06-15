@@ -36,6 +36,19 @@ export PATH="$HOME/.fzf/bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 
+# tmux sees pane_current_path through the process cwd, which resolves symlinks.
+# Keep split panes in zsh's logical PWD so quicktree panes stay under ~/worktrees.
+if [[ -n "${TMUX:-}" ]]; then
+    autoload -Uz add-zsh-hook
+
+    _tmux_set_logical_pwd() {
+        tmux set-option -p -q @logical_pwd "$PWD" >/dev/null 2>&1 || true
+    }
+
+    _tmux_set_logical_pwd
+    add-zsh-hook chpwd _tmux_set_logical_pwd
+fi
+
 # Set up fzf key bindings and fuzzy completion
 source <(fzf --zsh)  # fzf 0.48+
 
@@ -85,3 +98,5 @@ command -v zoxide &> /dev/null && eval "$(zoxide init --cmd cd zsh)"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export I_DANGEROUSLY_OPT_IN_TO_UNSUPPORTED_ALPHA_TOOLS=true
+
+export PATH="$HOME/.local/bin:$PATH"
