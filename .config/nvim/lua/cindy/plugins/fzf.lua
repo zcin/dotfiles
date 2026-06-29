@@ -8,7 +8,14 @@ return {
         local priority_dirs = { "model-serving/serving-engine", "wheelhouse/deptrees" }
 
         local function in_universe()
-            return vim.fn.getcwd():find("universe") ~= nil
+            -- it's a universe checkout (incl. quicktree mounts) if the
+            -- priority dirs actually exist in the cwd
+            for _, d in ipairs(priority_dirs) do
+                if vim.fn.isdirectory(d) == 0 then
+                    return false
+                end
+            end
+            return true
         end
 
         local function files_with_priority()
