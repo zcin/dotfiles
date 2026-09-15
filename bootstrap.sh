@@ -33,6 +33,40 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y zsh || warn "could not install
 DEBIAN_FRONTEND=noninteractive apt-get install -y ncurses-bin || warn "could not install ncurses-bin"
 DEBIAN_FRONTEND=noninteractive apt-get install -y stow || warn "could not install stow"
 
+# Ubuntu 24.04 ships Neovim 0.9.5. Install the same stable release used on
+# this dotfiles repo's primary machine from Neovim's official release archive.
+NVIM_VERSION="v0.12.5"
+case "$(uname -m)" in
+  x86_64) nvim_arch="x86_64" ;;
+  aarch64 | arm64) nvim_arch="arm64" ;;
+  *) nvim_arch="" ;;
+esac
+
+if [[ -n "$nvim_arch" ]] && ! "$HOME/.local/bin/nvim" --version 2>/dev/null | head -n 1 | grep -q "NVIM ${NVIM_VERSION}"; then
+  nvim_archive="/tmp/nvim-linux-${nvim_arch}.tar.gz"
+  nvim_url="https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-linux-${nvim_arch}.tar.gz"
+  nvim_install_dir="$HOME/.local/opt/nvim-${NVIM_VERSION}-${nvim_arch}"
+  nvim_staging_dir="${nvim_install_dir}.staging"
+
+  if curl --fail --location --retry 3 --output "$nvim_archive" "$nvim_url" &&
+    mkdir -p "$HOME/.local/bin" "$HOME/.local/opt" &&
+    rm -rf "$nvim_staging_dir" &&
+    mkdir -p "$nvim_staging_dir" &&
+    tar -C "$nvim_staging_dir" --strip-components=1 -xzf "$nvim_archive" &&
+    rm -rf "$nvim_install_dir" &&
+    mv "$nvim_staging_dir" "$nvim_install_dir" &&
+    ln -sfn "$nvim_install_dir/bin/nvim" "$HOME/.local/bin/nvim"; then
+    printf 'Installed %s.\n' "$("$HOME/.local/bin/nvim" --version | head -n 1)"
+  else
+    warn "could not install Neovim ${NVIM_VERSION} for ${nvim_arch}"
+  fi
+
+  rm -f "$nvim_archive"
+  rm -rf "$nvim_staging_dir"
+elif [[ -z "$nvim_arch" ]]; then
+  warn "unsupported architecture for Neovim binary: $(uname -m)"
+fi
+
 # Make future SSH sessions use zsh. The pod startup process itself remains bash.
 if zsh_path="$(command -v zsh 2>/dev/null)"; then
   current_shell="$(getent passwd root | cut -d: -f7)"
