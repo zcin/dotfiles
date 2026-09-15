@@ -67,6 +67,18 @@ elif [[ -z "$nvim_arch" ]]; then
   warn "unsupported architecture for Neovim binary: $(uname -m)"
 fi
 
+# Install coding-agent CLIs into ~/.local/bin. Authentication remains an
+# interactive, per-pod step and is intentionally not stored in this repository.
+mkdir -p "$HOME/.local/bin"
+
+if [[ ! -x "$HOME/.local/bin/codex" ]]; then
+  curl -fsSL https://chatgpt.com/codex/install.sh | sh || warn "could not install Codex"
+fi
+
+if [[ ! -x "$HOME/.local/bin/claude" ]]; then
+  curl -fsSL https://claude.ai/install.sh | bash || warn "could not install Claude Code"
+fi
+
 # Make future SSH sessions use zsh. The pod startup process itself remains bash.
 if zsh_path="$(command -v zsh 2>/dev/null)"; then
   current_shell="$(getent passwd root | cut -d: -f7)"
