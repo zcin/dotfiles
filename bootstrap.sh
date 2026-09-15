@@ -32,6 +32,7 @@ apt-get update || warn "could not update apt package metadata"
 DEBIAN_FRONTEND=noninteractive apt-get install -y zsh || warn "could not install zsh"
 DEBIAN_FRONTEND=noninteractive apt-get install -y ncurses-bin || warn "could not install ncurses-bin"
 DEBIAN_FRONTEND=noninteractive apt-get install -y stow || warn "could not install stow"
+DEBIAN_FRONTEND=noninteractive apt-get install -y bubblewrap || warn "could not install bubblewrap"
 
 # Ubuntu 24.04 ships Neovim 0.9.5. Install the same stable release used on
 # this dotfiles repo's primary machine from Neovim's official release archive.
