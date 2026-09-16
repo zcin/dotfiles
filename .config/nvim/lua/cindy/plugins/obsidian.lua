@@ -1,6 +1,7 @@
 return {
     "epwalsh/obsidian.nvim",
     version = "*", -- recommended, use latest release instead of latest commit
+    cond = vim.fn.isdirectory(vim.fn.expand("~/vault")) == 1,
     lazy = true,
     ft = "markdown",
     dependencies = {
