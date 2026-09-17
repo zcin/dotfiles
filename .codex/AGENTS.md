@@ -9,3 +9,11 @@
   environment variables when needed. Never expose credentials; use clearly
   marked placeholders. Distinguish observed output from expected output, and
   note fields or results that may vary between runs.
+
+## Persistent agent artifacts
+
+Store durable investigation artifacts, reports, captures, and handoff bundles under:
+
+`$HOME/agent-workspaces/<task-name>/`
+
+Use one descriptive lowercase kebab-case subdirectory per task and include a `README.md` with its purpose and entry points. Do not rely on `/tmp` for artifacts that must survive pod restarts. Keep live service runtime files in their service-required locations.
