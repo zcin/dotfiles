@@ -33,6 +33,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y zsh || warn "could not install
 DEBIAN_FRONTEND=noninteractive apt-get install -y ncurses-bin || warn "could not install ncurses-bin"
 DEBIAN_FRONTEND=noninteractive apt-get install -y stow || warn "could not install stow"
 DEBIAN_FRONTEND=noninteractive apt-get install -y bubblewrap || warn "could not install bubblewrap"
+DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential || warn "could not install C build tools"
 
 # Ubuntu 24.04 ships Neovim 0.9.5. Install the same stable release used on
 # this dotfiles repo's primary machine from Neovim's official release archive.
@@ -66,6 +67,37 @@ if [[ -n "$nvim_arch" ]] && ! "$HOME/.local/bin/nvim" --version 2>/dev/null | he
   rm -rf "$nvim_staging_dir"
 elif [[ -z "$nvim_arch" ]]; then
   warn "unsupported architecture for Neovim binary: $(uname -m)"
+fi
+
+# nvim-treesitter's Neovim 0.12 branch builds parsers with the standalone
+# tree-sitter CLI. Ubuntu 24.04's package is too old, so install a pinned
+# upstream binary alongside Neovim.
+TREE_SITTER_VERSION="v0.27.0"
+case "$(uname -m)" in
+  x86_64) tree_sitter_arch="x64" ;;
+  aarch64 | arm64) tree_sitter_arch="arm64" ;;
+  *) tree_sitter_arch="" ;;
+esac
+
+if [[ -n "$tree_sitter_arch" ]] &&
+  ! "$HOME/.local/bin/tree-sitter" --version 2>/dev/null | grep -q " ${TREE_SITTER_VERSION#v}$"; then
+  tree_sitter_archive="/tmp/tree-sitter-linux-${tree_sitter_arch}.gz"
+  tree_sitter_url="https://github.com/tree-sitter/tree-sitter/releases/download/${TREE_SITTER_VERSION}/tree-sitter-linux-${tree_sitter_arch}.gz"
+  tree_sitter_staging="$HOME/.local/bin/tree-sitter.staging"
+
+  if mkdir -p "$HOME/.local/bin" &&
+    curl --fail --location --retry 3 --output "$tree_sitter_archive" "$tree_sitter_url" &&
+    gzip --decompress --stdout "$tree_sitter_archive" > "$tree_sitter_staging" &&
+    chmod 755 "$tree_sitter_staging" &&
+    mv "$tree_sitter_staging" "$HOME/.local/bin/tree-sitter"; then
+    printf 'Installed %s.\n' "$("$HOME/.local/bin/tree-sitter" --version)"
+  else
+    warn "could not install tree-sitter ${TREE_SITTER_VERSION} for ${tree_sitter_arch}"
+  fi
+
+  rm -f "$tree_sitter_archive" "$tree_sitter_staging"
+elif [[ -z "$tree_sitter_arch" ]]; then
+  warn "unsupported architecture for tree-sitter binary: $(uname -m)"
 fi
 
 # Install coding-agent CLIs into ~/.local/bin. Authentication remains an
