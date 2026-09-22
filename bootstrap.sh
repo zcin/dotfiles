@@ -5,6 +5,7 @@
 set -uo pipefail
 
 DOTFILES_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+mkdir -p "$HOME/.local/bin"
 
 warn() {
   printf 'bootstrap warning: %s\n' "$*" >&2
@@ -67,7 +68,7 @@ if [[ -n "$nvim_arch" ]] && ! "$HOME/.local/bin/nvim" --version 2>/dev/null | he
   nvim_staging_dir="${nvim_install_dir}.staging"
 
   if curl --fail --location --retry 3 --output "$nvim_archive" "$nvim_url" &&
-    mkdir -p "$HOME/.local/bin" "$HOME/.local/opt" &&
+    mkdir -p "$HOME/.local/opt" &&
     rm -rf "$nvim_staging_dir" &&
     mkdir -p "$nvim_staging_dir" &&
     tar -C "$nvim_staging_dir" --strip-components=1 -xzf "$nvim_archive" &&
@@ -106,8 +107,7 @@ if [[ -n "$tree_sitter_arch" ]] &&
   tree_sitter_url="https://github.com/tree-sitter/tree-sitter/releases/download/${TREE_SITTER_VERSION}/tree-sitter-linux-${tree_sitter_arch}.gz"
   tree_sitter_staging="$HOME/.local/bin/tree-sitter.staging"
 
-  if mkdir -p "$HOME/.local/bin" &&
-    curl --fail --location --retry 3 --output "$tree_sitter_archive" "$tree_sitter_url" &&
+  if curl --fail --location --retry 3 --output "$tree_sitter_archive" "$tree_sitter_url" &&
     gzip --decompress --stdout "$tree_sitter_archive" > "$tree_sitter_staging" &&
     chmod 755 "$tree_sitter_staging" &&
     mv "$tree_sitter_staging" "$HOME/.local/bin/tree-sitter"; then
@@ -126,40 +126,25 @@ fi
 # ==============================================================================
 section "KUBERNETES TOOLS"
 
-# Install K9s from its latest Debian package. This script runs as root, so apt
-# does not need sudo.
-case "$(uname -m)" in
-  x86_64) k9s_arch="amd64" ;;
-  aarch64 | arm64) k9s_arch="arm64" ;;
-  *) k9s_arch="" ;;
-esac
+if ! command -v k9s >/dev/null 2>&1; then
+  curl -L -o /tmp/k9s_linux_amd64.deb https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb
+  DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/k9s_linux_amd64.deb
+fi
 
-if [[ -z "$k9s_arch" ]]; then
-  warn "unsupported architecture for K9s: $(uname -m)"
-elif ! command -v k9s >/dev/null 2>&1; then
-  k9s_package="/tmp/k9s_linux_${k9s_arch}.deb"
-  k9s_url="https://github.com/derailed/k9s/releases/latest/download/k9s_linux_${k9s_arch}.deb"
+# ==============================================================================
+# 1PASSWORD CLI
+# ==============================================================================
+section "1PASSWORD CLI"
 
-  if curl --fail --location --retry 3 --output "$k9s_package" "$k9s_url" &&
-    DEBIAN_FRONTEND=noninteractive apt-get install -y "$k9s_package"; then
-    k9s version
-  else
-    warn "could not install K9s for ${k9s_arch}"
-  fi
-
-  rm -f "$k9s_package"
-else
-  k9s version
+if ! command -v op >/dev/null 2>&1; then
+  curl -L -o /tmp/1password-cli.deb https://downloads.1password.com/linux/debian/amd64/stable/1password-cli-amd64-latest.deb
+  DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/1password-cli.deb
 fi
 
 # ==============================================================================
 # CODING AGENTS
 # ==============================================================================
 section "CODING AGENTS"
-
-# Install coding-agent CLIs into ~/.local/bin. Authentication remains an
-# interactive, per-pod step and is intentionally not stored in this repository.
-mkdir -p "$HOME/.local/bin"
 
 if [[ ! -x "$HOME/.local/bin/codex" ]]; then
   curl -fsSL https://chatgpt.com/codex/install.sh | sh || warn "could not install Codex"
