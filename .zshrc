@@ -1,11 +1,23 @@
+# ==============================================================================
+# LOCAL OVERRIDES
+# ==============================================================================
+
 # Source local zshrc if it exists
 [[ -r "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
+
+# ==============================================================================
+# PROMPT
+# ==============================================================================
 
 # Prompt configuration (sindresorhus/pure)
 fpath+=($HOME/.zsh/pure)
 autoload -U promptinit; promptinit
 prompt pure
 export PURE_GIT_PULL=0
+
+# ==============================================================================
+# SHELL CONFIGURATION
+# ==============================================================================
 
 # ZSH configurations
 bindkey -e  # emacs style command line
@@ -22,6 +34,10 @@ setopt hist_ignore_dups
 setopt hist_ignore_space
 setopt interactivecomments
 
+# ==============================================================================
+# ALIASES
+# ==============================================================================
+
 # Aliases
 alias vim='nvim'
 alias gs='git status'
@@ -33,11 +49,18 @@ alias t='tmux a'
 alias gsn='git status -unormal'
 alias cod='isaac codex -- --cd $(pwd)'
 
-# Keyboard shortcuts
+# ==============================================================================
+# PATH
+# ==============================================================================
+
 export PATH="$HOME/scripts:$PATH"
 export PATH="$HOME/.fzf/bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
+
+# ==============================================================================
+# TMUX
+# ==============================================================================
 
 # tmux sees pane_current_path through the process cwd, which resolves symlinks.
 # Keep split panes in zsh's logical PWD so quicktree panes stay under ~/worktrees.
@@ -52,8 +75,16 @@ if [[ -n "${TMUX:-}" ]]; then
     add-zsh-hook chpwd _tmux_set_logical_pwd
 fi
 
+# ==============================================================================
+# FZF
+# ==============================================================================
+
 # Set up fzf key bindings and fuzzy completion
 source <(fzf --zsh)  # fzf 0.48+
+
+# ==============================================================================
+# CONDA
+# ==============================================================================
 
 # Conda
 CONDA_PATH=($HOME/miniconda3/bin/conda $HOME/miniforge3/bin/conda /usr/local/conda/bin/conda)
@@ -74,6 +105,10 @@ ce() {
     conda activate $(conda info --envs | fzf | awk '{print $1}')
 }
 
+# ==============================================================================
+# NVM
+# ==============================================================================
+
 # Setup NVM (lazy loaded)
 export NVM_DIR="$HOME/.nvm"
 nvm() {
@@ -83,7 +118,10 @@ nvm() {
   nvm "$@"
 }
 
-# ZSH completions
+# ==============================================================================
+# COMPLETIONS
+# ==============================================================================
+
 fpath+=~/.zfunc;
 autoload -Uz compinit
 compinit -u
@@ -91,8 +129,15 @@ zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'  # case insensitive compl
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}   # use colors in completion listings
 zstyle ':completion:*' menu select
 
-# Zoxide
+# ==============================================================================
+# ZOXIDE
+# ==============================================================================
+
 command -v zoxide &> /dev/null && eval "$(zoxide init --cmd cd zsh)"
+
+# ==============================================================================
+# BUN
+# ==============================================================================
 
 # bun completions
 [ -s "/home/cindy.zhang/.bun/_bun" ] && source "/home/cindy.zhang/.bun/_bun"
@@ -103,3 +148,48 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 export I_DANGEROUSLY_OPT_IN_TO_UNSUPPORTED_ALPHA_TOOLS=true
 
 export PATH="$HOME/.local/bin:$PATH"
+
+# ==============================================================================
+# 1PASSWORD
+# ==============================================================================
+
+op() {
+  local token_file="$HOME/.config/op/service-account-token"
+
+  if [[ ! -s "$token_file" ]]; then
+    echo "Run: op-login" >&2
+    return 1
+  fi
+
+  OP_SERVICE_ACCOUNT_TOKEN="$(<"$token_file")" command op "$@"
+}
+
+with-secrets() {
+  local token_file="$HOME/.config/op/service-account-token"
+
+  if [[ ! -s "$token_file" ]]; then
+    echo "Run: op-login" >&2
+    return 1
+  fi
+
+  OP_SERVICE_ACCOUNT_TOKEN="$(<"$token_file")" \
+    command op run --env-file "$HOME/.config/op/dev.env" -- \
+    env -u OP_SERVICE_ACCOUNT_TOKEN "$@"
+}
+
+op-login() {
+  local token token_file="$HOME/.config/op/service-account-token"
+
+  read -rs "token?1Password service-account token: "
+  echo
+
+  if ! OP_SERVICE_ACCOUNT_TOKEN="$token" command op vault list >/dev/null; then
+    echo "Invalid 1Password service-account token" >&2
+    return 1
+  fi
+
+  install -d -m 700 "${token_file:h}"
+  (umask 077; print -rn -- "$token" >| "$token_file")
+  chmod 600 "$token_file"
+  echo "Saved 1Password authentication for future shells."
+}
