@@ -10,6 +10,12 @@ warn() {
   printf 'bootstrap warning: %s\n' "$*" >&2
 }
 
+section() {
+  printf '\n================================================================================\n'
+  printf '%s\n' "$1"
+  printf '================================================================================\n'
+}
+
 clone_if_missing() {
   local repository="$1"
   local destination="$2"
@@ -27,6 +33,11 @@ clone_if_missing() {
     warn "could not clone $repository"
 }
 
+# ==============================================================================
+# SYSTEM PACKAGES
+# ==============================================================================
+section "SYSTEM PACKAGES"
+
 # Install the minimum system packages needed by this shell configuration.
 apt-get update || warn "could not update apt package metadata"
 DEBIAN_FRONTEND=noninteractive apt-get install -y zsh || warn "could not install zsh"
@@ -34,6 +45,11 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y ncurses-bin || warn "could not
 DEBIAN_FRONTEND=noninteractive apt-get install -y stow || warn "could not install stow"
 DEBIAN_FRONTEND=noninteractive apt-get install -y bubblewrap || warn "could not install bubblewrap"
 DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential || warn "could not install C build tools"
+
+# ==============================================================================
+# NEOVIM
+# ==============================================================================
+section "NEOVIM"
 
 # Ubuntu 24.04 ships Neovim 0.9.5. Install the same stable release used on
 # this dotfiles repo's primary machine from Neovim's official release archive.
@@ -69,6 +85,11 @@ elif [[ -z "$nvim_arch" ]]; then
   warn "unsupported architecture for Neovim binary: $(uname -m)"
 fi
 
+# ==============================================================================
+# TREE-SITTER CLI
+# ==============================================================================
+section "TREE-SITTER CLI"
+
 # nvim-treesitter's Neovim 0.12 branch builds parsers with the standalone
 # tree-sitter CLI. Ubuntu 24.04's package is too old, so install a pinned
 # upstream binary alongside Neovim.
@@ -100,6 +121,42 @@ elif [[ -z "$tree_sitter_arch" ]]; then
   warn "unsupported architecture for tree-sitter binary: $(uname -m)"
 fi
 
+# ==============================================================================
+# KUBERNETES TOOLS
+# ==============================================================================
+section "KUBERNETES TOOLS"
+
+# Install K9s from its latest Debian package. This script runs as root, so apt
+# does not need sudo.
+case "$(uname -m)" in
+  x86_64) k9s_arch="amd64" ;;
+  aarch64 | arm64) k9s_arch="arm64" ;;
+  *) k9s_arch="" ;;
+esac
+
+if [[ -z "$k9s_arch" ]]; then
+  warn "unsupported architecture for K9s: $(uname -m)"
+elif ! command -v k9s >/dev/null 2>&1; then
+  k9s_package="/tmp/k9s_linux_${k9s_arch}.deb"
+  k9s_url="https://github.com/derailed/k9s/releases/latest/download/k9s_linux_${k9s_arch}.deb"
+
+  if curl --fail --location --retry 3 --output "$k9s_package" "$k9s_url" &&
+    DEBIAN_FRONTEND=noninteractive apt-get install -y "$k9s_package"; then
+    k9s version
+  else
+    warn "could not install K9s for ${k9s_arch}"
+  fi
+
+  rm -f "$k9s_package"
+else
+  k9s version
+fi
+
+# ==============================================================================
+# CODING AGENTS
+# ==============================================================================
+section "CODING AGENTS"
+
 # Install coding-agent CLIs into ~/.local/bin. Authentication remains an
 # interactive, per-pod step and is intentionally not stored in this repository.
 mkdir -p "$HOME/.local/bin"
@@ -112,6 +169,11 @@ if [[ ! -x "$HOME/.local/bin/claude" ]]; then
   curl -fsSL https://claude.ai/install.sh | bash || warn "could not install Claude Code"
 fi
 
+# ==============================================================================
+# DEFAULT SHELL
+# ==============================================================================
+section "DEFAULT SHELL"
+
 # Make future SSH sessions use zsh. The pod startup process itself remains bash.
 if zsh_path="$(command -v zsh 2>/dev/null)"; then
   current_shell="$(getent passwd root | cut -d: -f7)"
@@ -121,6 +183,11 @@ if zsh_path="$(command -v zsh 2>/dev/null)"; then
 else
   warn "zsh is unavailable; SSH sessions will keep using the existing login shell"
 fi
+
+# ==============================================================================
+# DOTFILES
+# ==============================================================================
+section "DOTFILES"
 
 # Install the repository-backed configuration into root's home. Ignore this
 # bootstrap entry point itself; it belongs in the checkout, not at ~/bootstrap.sh.
@@ -132,6 +199,11 @@ if command -v stow >/dev/null 2>&1; then
 else
   warn "stow is unavailable; dotfiles were not linked into $HOME"
 fi
+
+# ==============================================================================
+# SHELL AND TMUX PLUGINS
+# ==============================================================================
+section "SHELL AND TMUX PLUGINS"
 
 # Dependencies referenced by .zshrc and .tmux.conf.
 mkdir -p "$HOME/.zsh" "$HOME/.tmux/plugins"
@@ -146,6 +218,11 @@ if ! command -v fzf >/dev/null 2>&1 || ! fzf --zsh >/dev/null 2>&1; then
   fi
 fi
 
+# ==============================================================================
+# GHOSTTY TERMINFO
+# ==============================================================================
+section "GHOSTTY TERMINFO"
+
 # If the Ghostty terminfo source is committed to this repository, compile it
 # into the persistent home directory for tmux and other terminal applications.
 ghostty_terminfo="$DOTFILES_DIR/terminfo/xterm-ghostty.terminfo"
@@ -155,5 +232,6 @@ if [[ -f "$ghostty_terminfo" ]] && command -v tic >/dev/null 2>&1; then
     warn "could not compile Ghostty terminfo"
 fi
 
+section "BOOTSTRAP COMPLETE"
 printf 'Dotfiles bootstrap complete. New SSH sessions will use %s.\n' \
   "$(getent passwd root | cut -d: -f7)"
