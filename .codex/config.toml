@@ -4,4 +4,6 @@ approval_policy = "never"
 sandbox_mode = "danger-full-access"
 [tui]
 alternate_screen = "never"
+status_line = ["model-with-reasoning", "current-dir", "run-state", "permissions", "context-remaining", "five-hour-limit", "weekly-limit", "context-window-size", "estimated-thread-cost"]
+status_line_use_colors = true
 
