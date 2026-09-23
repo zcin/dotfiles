@@ -131,6 +131,28 @@ if ! command -v k9s >/dev/null 2>&1; then
   DEBIAN_FRONTEND=noninteractive apt-get install -y /tmp/k9s_linux_amd64.deb
 fi
 
+if [[ ! -x "$HOME/.local/bin/rancher" ]]; then
+  rancher_tmp_dir="$(mktemp -d)"
+
+  if curl -fsSL https://github.com/rancher/cli/releases/download/v2.15.1/rancher-linux-amd64-v2.15.1.tar.gz | tar -C "$rancher_tmp_dir" -xzf - && install -m 755 "$rancher_tmp_dir/rancher-v2.15.1/rancher" "$HOME/.local/bin/rancher"; then
+    printf 'Installed %s.\n' "$("$HOME/.local/bin/rancher" --version)"
+  else
+    warn "could not install Rancher CLI"
+  fi
+
+  rm -rf "$rancher_tmp_dir"
+fi
+
+if [[ -f "$HOME/baseten/bin/rancher/rancher_connect.sh" ]]; then
+  install -m 755 "$HOME/baseten/bin/rancher/rancher_connect.sh" "$HOME/.rancher_connect" || warn "could not install rancher-connect"
+else
+  warn "$HOME/baseten/bin/rancher/rancher_connect.sh is unavailable; rancher-connect was not installed"
+fi
+
+if [[ ! -s "$HOME/.kube/rancher-api-key.json" ]]; then
+  printf '%s\n' 'Rancher authentication still requires one-time setup. After op-login, run:' '  with-secrets sh -c '\''/root/baseten/bin/rancher/install_rancher_connect.sh --token "$RANCHER_TOKEN" --expiration YYYY-MM-DD'\'''
+fi
+
 # ==============================================================================
 # 1PASSWORD CLI
 # ==============================================================================
